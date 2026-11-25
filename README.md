@@ -157,6 +157,16 @@ php artisan test
 
 Test memakai SQLite in-memory (`phpunit.xml`), jadi tidak menyentuh database MySQL. Di Windows, aktifkan dulu `extension=pdo_sqlite` dan `extension=sqlite3` di `php.ini`.
 
+### Koleksi Postman
+
+[docs/postman/VannStore.postman_collection.json](docs/postman/VannStore.postman_collection.json) berisi 22 request sukses dan galat (401, 403, 404, 409, 422) beserta pengecekan otomatis. Token dan id pesanan diisi otomatis antar-request.
+
+1. `php artisan migrate:fresh --seed` lalu `php artisan serve`
+2. Postman → **Import** → pilih file koleksi
+3. Klik koleksi **VannStore API v1** → **Run** → **Run VannStore API v1**
+
+Jalankan ulang `migrate:fresh --seed` sebelum setiap run (stok dan pesanan berubah), dan beri jeda 1 menit antar-run karena login dibatasi 5 kali per menit. Tanpa aplikasi Postman: `npx newman run docs/postman/VannStore.postman_collection.json`.
+
 CI GitHub Actions ([.github/workflows/tests.yml](.github/workflows/tests.yml)) menjalankan seluruh test pada setiap push dan pull request ke `main`/`develop`.
 
 ## Produksi
