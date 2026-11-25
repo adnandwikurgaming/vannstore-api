@@ -15,7 +15,7 @@ class CheckoutTest extends TestCase
     public function test_checkout_dari_dua_penjual_berhasil_dan_memotong_stok()
     {
         // CUKUP TAMBAHKAN 1 BARIS INI DI PALING ATAS
-        $this->markTestSkipped('Menunggu perbaikan trait AuthorizesRequests di OrderController (Anggota 1).');
+       
 
         // 1. Buat data dummy (Pembeli dan 2 Penjual)
         $pembeli = User::factory()->pembeli()->create();
@@ -47,7 +47,7 @@ class CheckoutTest extends TestCase
     public function test_checkout_gagal_jika_stok_kurang()
     {
         // CUKUP TAMBAHKAN 1 BARIS INI DI PALING ATAS
-        $this->markTestSkipped('Menunggu perbaikan trait AuthorizesRequests di OrderController (Anggota 1).');
+        
 
         $pembeli = User::factory()->pembeli()->create();
         $penjual = User::factory()->penjual()->create();

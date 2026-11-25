@@ -35,7 +35,7 @@ class ApiErrorHandlingTest extends TestCase
     public function test_pembeli_tidak_boleh_melihat_pesanan_milik_pembeli_lain_403()
     {
         // TAMBAHKAN BARIS INI DI PALING ATAS:
-        $this->markTestSkipped('Menunggu perbaikan trait AuthorizesRequests di OrderController (Anggota 1).');
+        
 
         // 1. Buat 2 pembeli dan 1 penjual
         $pembeliA = User::factory()->pembeli()->create();
