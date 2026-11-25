@@ -19,6 +19,8 @@ class OrderController extends Controller
     /** POST /api/v1/orders — checkout keranjang, 1 pesanan per penjual. */
     public function store(StoreOrderRequest $request): JsonResponse
     {
+        $this->authorize('create', Order::class);
+
         $orders = $this->orders->checkout($request->user(), $request->validated());
 
         return OrderResource::collection($orders->each->load('seller'))
@@ -41,6 +43,8 @@ class OrderController extends Controller
     /** GET /api/v1/orders/{order} — detail; hak akses dicek OrderPolicy::view. */
     public function show(Order $order): OrderResource
     {
+        $this->authorize('view', $order);
+        
         return new OrderResource($order->load(['seller', 'buyer', 'items']));
     }
 }

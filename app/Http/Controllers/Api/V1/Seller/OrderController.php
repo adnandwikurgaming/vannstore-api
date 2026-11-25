@@ -34,6 +34,8 @@ class OrderController extends Controller
     /** PATCH /api/v1/seller/orders/{order}/status — kepemilikan dicek OrderPolicy::updateStatus. */
     public function updateStatus(UpdateOrderStatusRequest $request, Order $order): OrderResource
     {
+        $this->authorize('updateStatus', $order);
+        
         $order = $this->orders->updateStatus($order, $request->status());
 
         return (new OrderResource($order->load('buyer')))

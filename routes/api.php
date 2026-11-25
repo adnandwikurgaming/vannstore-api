@@ -24,7 +24,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/recommendations', RecommendationController::class);
 
         // --- Penjual ---
-        Route::prefix('seller')->group(function () {
+        Route::prefix('seller')->middleware('role:penjual')->group(function () {
             // Produk penjual (Orang 2): GET/POST /products, PATCH /products/{product}, PATCH /products/{product}/stock
 
             Route::get('/orders', [SellerOrderController::class, 'index']);
