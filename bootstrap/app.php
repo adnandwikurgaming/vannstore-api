@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -39,11 +40,15 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (AuthorizationException $exception, Request $request) {
+        // Laravel mengubah AuthorizationException (Gate/Policy/->can()) menjadi
+        // AccessDeniedHttpException sebelum callback render dijalankan, jadi
+        // keduanya ditangani di sini agar 403 tidak membawa stack trace.
+        $forbidden = function (AuthorizationException|AccessDeniedHttpException $exception, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'message' => 'Anda tidak memiliki akses',
+                    'message' => $exception->getMessage() ?: 'Anda tidak memiliki akses',
                 ], 403);
             }
-        });
+        };
+        $exceptions->render($forbidden);
     })->create();

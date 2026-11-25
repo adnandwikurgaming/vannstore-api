@@ -48,6 +48,18 @@ class OrderSuccessPathTest extends TestCase
             ->assertJsonPath('data.id', $orderId);
     }
 
+    public function test_galat_403_tidak_membocorkan_stack_trace_walau_debug_aktif(): void
+    {
+        config(['app.debug' => true]);
+        $orderId = $this->checkout(User::factory()->pembeli()->create(), Product::factory()->create())->json('data.0.id');
+
+        Sanctum::actingAs(User::factory()->pembeli()->create());
+
+        $this->getJson("/api/v1/orders/{$orderId}")
+            ->assertForbidden()
+            ->assertExactJson(['message' => 'Anda tidak memiliki akses']);
+    }
+
     public function test_penjual_bisa_memproses_pesanan_tokonya(): void
     {
         $product = Product::factory()->create();
