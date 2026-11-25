@@ -1,12 +1,12 @@
 <?php
 
-use Illuminate\Auth\Access\AuthorizationException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use App\Http\Middleware\EnsureUserHasRole;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,14 +16,21 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Middleware alias untuk role dan Policy
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
         ]);
+
+        // Menghindari redirect ke route login untuk request API
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('api/*') ? null : route('login')
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn(Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
         $exceptions->render(function (NotFoundHttpException $exception, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -31,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 404);
             }
         });
+
         $exceptions->render(function (AuthorizationException $exception, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
