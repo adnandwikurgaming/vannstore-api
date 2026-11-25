@@ -8,7 +8,6 @@ use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -26,12 +25,9 @@ class AuthController extends Controller
             'phone' => $validated['phone'] ?? null,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
             'message' => 'Registrasi berhasil.',
-            'user' => $user,
-            'token' => $token,
+            'data' => $this->tokenPayload($user),
         ], 201);
     }
 
@@ -39,21 +35,36 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
-        if (! Auth::attempt($credentials)) {
+        $user = User::where('email', $credentials['email'])->first();
+
+        // Token API (stateless): cek password langsung, bukan Auth::attempt (session web).
+        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             return response()->json([
                 'message' => 'Email atau password salah.',
             ], 401);
         }
 
-        $user = User::where('email', $credentials['email'])->firstOrFail();
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
             'message' => 'Login berhasil.',
-            'user' => $user,
-            'token' => $token,
+            'data' => $this->tokenPayload($user),
         ]);
+    }
+
+    /**
+     * Bentuk respons sesuai kontrak: {"data": {"token", "user": {id, name, role}}}.
+     * Hanya data yang dibutuhkan aplikasi, tanpa email/telepon.
+     */
+    private function tokenPayload(User $user): array
+    {
+        return [
+            'token' => $user->createToken('auth_token')->plainTextToken,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role->value,
+                'store_name' => $user->store_name,
+            ],
+        ];
     }
 
     public function logout(Request $request): JsonResponse
