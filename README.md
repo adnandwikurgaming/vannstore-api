@@ -1,58 +1,193 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# VannStore API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend REST API untuk **VannStore – Marketplace Produk Handmade**.
+Dipakai oleh aplikasi Flutter Android (pembeli & penjual) dan panel web admin.
 
-## About Laravel
+- Laravel 13 + Laravel Sanctum (token Bearer)
+- MySQL (produksi/pengembangan), SQLite in-memory (test)
+- Semua endpoint di bawah prefix `/api/v1`, respons JSON
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Proyek kelompok mata kuliah Sistem Web dan Seluler Lanjut. Pembagian tugas dan keputusan desain: [docs/PEMBAGIAN_TUGAS.md](docs/PEMBAGIAN_TUGAS.md).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Kebutuhan
 
-## Learning Laravel
+- PHP **8.3+** dengan ekstensi `openssl`, `pdo_mysql`, `mbstring`, `fileinfo` (untuk test: `pdo_sqlite`, `sqlite3`)
+- Composer 2
+- MySQL 8 / MariaDB
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Cara menjalankan
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/adnandwikurgaming/vannstore-api.git
+cd vannstore-api
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Buat database `vannstore` di MySQL, lalu sesuaikan `.env`:
 
-## Contributing
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=vannstore
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Isi tabel dan data contoh, lalu jalankan server:
 
-## Code of Conduct
+```bash
+php artisan migrate:fresh --seed
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+API tersedia di `http://127.0.0.1:8000/api/v1`.
+Untuk diakses dari emulator Android gunakan `http://10.0.2.2:8000/api/v1`; dari HP fisik jalankan `php artisan serve --host=0.0.0.0` dan pakai IP laptop.
 
-## Security Vulnerabilities
+**Tanpa MySQL (coba cepat):** di `.env` set `DB_CONNECTION=sqlite`, hapus baris `DB_HOST` sampai `DB_PASSWORD`, buat file kosong `database/database.sqlite`, lalu `php artisan migrate:fresh --seed`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Akun seeder
 
-## License
+Semua akun memakai password **`password`**.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Peran | Email | Keterangan |
+|---|---|---|
+| Admin | `admin@vannstore.test` | |
+| Penjual | `rina@vannstore.test` | Toko "Rajut Rina" |
+| Penjual | `bagas@vannstore.test` | Toko "Kayu Bagas Workshop" |
+| Pembeli | `andi@vannstore.test` | |
+| Pembeli | `sari@vannstore.test` | |
+
+Data uji khusus: produk **Gelang Manik Etnik** stok 1 (uji stok terakhir) dan **Miniatur Vespa Kayu** stok 0 (uji produk habis).
+
+## Autentikasi
+
+```http
+POST /api/v1/login
+Content-Type: application/json
+Accept: application/json
+
+{"email": "andi@vannstore.test", "password": "password"}
+```
+
+```json
+{
+  "message": "Login berhasil.",
+  "data": {
+    "token": "1|xxxxxxxx",
+    "user": { "id": 4, "name": "Andi Saputra", "role": "pembeli", "store_name": null }
+  }
+}
+```
+
+Request berikutnya wajib membawa header:
+
+```http
+Authorization: Bearer 1|xxxxxxxx
+Accept: application/json
+```
+
+## Endpoint
+
+| Method | Endpoint | Peran | Keterangan |
+|---|---|---|---|
+| POST | `/register` | Publik | Daftar sebagai `pembeli` atau `penjual` (admin tidak bisa daftar) |
+| POST | `/login` | Publik | Maks. 5 percobaan/menit |
+| POST | `/logout` | Semua | Mencabut token aktif (204) |
+| GET | `/user` | Semua | Data user yang sedang login |
+| POST | `/orders` | Pembeli | Checkout keranjang; dipecah 1 pesanan per penjual |
+| GET | `/orders/me` | Pembeli | Riwayat pesanan sendiri |
+| GET | `/orders/{order}` | Pembeli/penjual terkait, admin | Detail pesanan |
+| GET | `/recommendations` | Semua | Maks. 10 rekomendasi produk |
+| GET | `/seller/orders?status=` | Penjual | Pesanan masuk ke toko |
+| PATCH | `/seller/orders/{order}/status` | Penjual pemilik | Ubah status pesanan |
+
+### Contoh checkout
+
+```http
+POST /api/v1/orders
+
+{
+  "items": [
+    { "product_id": 1, "qty": 2 },
+    { "product_id": 6, "qty": 1 }
+  ],
+  "shipping_address": "Jl. Merdeka No. 10, Bandung",
+  "notes": "Tolong dibungkus kado"
+}
+```
+
+Respons `201` berisi array pesanan (satu per penjual). Stok dipotong dalam satu transaksi dengan penguncian baris, sehingga dua pembeli tidak bisa sama-sama mengambil stok terakhir.
+
+### Alur status pesanan
+
+```
+menunggu_konfirmasi → diproses → dikirim → selesai
+        └──────────────┴──→ dibatalkan (stok dikembalikan)
+```
+
+Setiap respons pesanan menyertakan `allowed_next_status`. Perubahan status menyimpan notifikasi untuk pembeli (tabel `notifications`).
+
+### Rekomendasi
+
+Kategori diberi skor dari produk yang dilihat (×1) dan dibeli (×3) dalam 90 hari terakhir; produk dari kategori teratas ditampilkan lebih dulu. Tanpa riwayat, sistem menampilkan produk terlaris lalu terbaru. Produk nonaktif, stok habis, dan milik sendiri tidak ditampilkan.
+
+## Format galat
+
+Semua galat berbentuk `{"message": "...", "errors": {...}}`.
+
+| Kode | Kapan | Contoh |
+|---|---|---|
+| 401 | Tanpa token / token dicabut / login salah | `{"message": "Unauthenticated."}` |
+| 403 | Peran atau pemilik tidak berhak | `{"message": "Anda tidak memiliki akses"}` |
+| 404 | Data atau route tidak ada | `{"message": "Data tidak ditemukan"}` |
+| 409 | Stok tidak cukup / produk tidak tersedia | `{"message": "Stok tidak mencukupi", "errors": {"items.1.qty": ["Stok Gelang Manik Etnik tersisa 1, diminta 5."]}}` |
+| 422 | Input tidak valid / transisi status salah | `{"message": "Perubahan status tidak diizinkan", "errors": {"status": ["..."]}}` |
+| 429 | Terlalu banyak percobaan login | `{"message": "Too Many Attempts."}` |
+
+## Pengujian
+
+```bash
+php artisan test
+```
+
+Test memakai SQLite in-memory (`phpunit.xml`), jadi tidak menyentuh database MySQL. Di Windows, aktifkan dulu `extension=pdo_sqlite` dan `extension=sqlite3` di `php.ini`.
+
+CI GitHub Actions ([.github/workflows/tests.yml](.github/workflows/tests.yml)) menjalankan seluruh test pada setiap push dan pull request ke `main`/`develop`.
+
+## Produksi
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+```
+
+`APP_DEBUG` **wajib `false`** di server agar stack trace dan path server tidak bocor ke klien. Jangan pernah meng-commit file `.env`.
+
+## Struktur penting
+
+```
+app/
+  Enums/            UserRole, OrderStatus (aturan transisi)
+  Exceptions/       InsufficientStockException (409), InvalidStatusTransitionException (422)
+  Http/Controllers/ AuthController, Api/V1/OrderController, Api/V1/Seller/OrderController, Api/V1/RecommendationController
+  Http/Requests/    validasi input (Form Request)
+  Http/Resources/   bentuk respons JSON
+  Policies/         OrderPolicy, ProductPolicy (RBAC + otorisasi objek)
+  Services/         OrderService, RecommendationService (logika bisnis)
+database/
+  migrations/  factories/  seeders/
+routes/api.php
+tests/Feature/
+```
+
+## Alur kerja Git
+
+- `main`: rilis (tag `v0.3.0`)
+- `develop`: integrasi, harus lolos test
+- `feature/*`: satu fitur per branch, masuk lewat pull request yang di-review anggota lain
+- Commit mengikuti Conventional Commits: `feat`, `fix`, `test`, `docs`, `ci`, `chore`
